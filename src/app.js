@@ -1,9 +1,9 @@
 const Framework = require('pseudonym.node.ecommerce.library.framework');
-const ${{servicename}}Controller = require('./controllers/${{servicename_lowercase}}');
+const UsersController = require('./controllers/users');
 
-const serviceRunner = new Framework.Service.Runner('${{servicename}} Service');
+const serviceRunner = new Framework.Service.Runner('Auth Service');
 
-serviceRunner.RegisterController('/api', new ${{servicename}}Controller());
+serviceRunner.RegisterController('/api', new UsersController());
 
 serviceRunner.RegisterPostProcessor((request, response, complete) => {
     return request.Environment.Authenticator.Logout(request, err => {
@@ -18,4 +18,4 @@ serviceRunner.RegisterPostProcessor((request, response, complete) => {
     })
 });
 
-serviceRunner.Start(${{serviceport}});
+serviceRunner.Start(3100);
