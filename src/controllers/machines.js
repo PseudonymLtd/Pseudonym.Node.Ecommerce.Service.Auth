@@ -1,70 +1,70 @@
 const Framework = require('pseudonym.node.ecommerce.library.framework');
-const User = require('../models/user');
+const Machine = require('../models/machine');
 const PasswordTools = require('../utils/passwordTools');
 const Role = require('../models/role');
 
-module.exports = class UsersController extends Framework.Service.Controller {
+module.exports = class MachinesController extends Framework.Service.Controller {
     constructor() {
-        super('Users Controller');
+        super('Machines Controller');
 
-        this.Get('/users', (request, response, next) => {
+        this.Get('/machines', (request, response, next) => {
             Role.FetchAll((roles, err) => {
                 if (err !== undefined) { 
                     return next(err); 
                 }
                 else {
-                    User.Query({ _type: 'User' }, (users, err) => {
+                    Machine.Query({ _type: 'machine' }, (machines, err) => {
                         if (err !== undefined) { 
                             return next(err); 
                         }
                         else {
-                            users.forEach(user => {
-                                for (let index in user.Roles) {
-                                    const role = roles.find(r => r._id === user.Roles[index].toString());
+                            machines.forEach(machine => {
+                                for (let index in machine.Roles) {
+                                    const role = roles.find(r => r._id === machine.Roles[index].toString());
                                     if (role) {
-                                        user.Roles[index] = role ? role : {
-                                            _id: user.Roles[index],
+                                        machine.Roles[index] = role ? role : {
+                                            _id: machine.Roles[index],
                                             _name: 'MISSING_ROLE'
                                         }
                                     }
                                 }
                             });
-                            return response.Ok(users);
+                            return response.Ok(machines);
                         }
                     });
                 }
             });
         });
 
-        this.Get('/user/:id', (request, response, next) => {
-            User.FetchById(request.params.id, (user, err) => {
+        this.Get('/machine/:id', (request, response, next) => {
+            Machine.FetchById(request.params.id, (machine, err) => {
                 if (err !== undefined) { 
                     return next(err); 
                 }
-                else if (user === null) {
-                    return response.BadRequest(`A User with an id of '${request.params.id}' does not exist in the database.`, {
+                else if (machine === null) {
+                    return response.BadRequest(`A machine with an id of '${request.params.id}' does not exist in the database.`, {
                         suppliedId: request.params.id
                     });
                 }
                 else {
-                    Role.FetchByIds(user.Roles, (roles, err) => {
+                    Role.FetchByIds(machine.Roles, (roles, err) => {
                         if (err !== undefined) { 
                             return next(err); 
                         }
                         else {
-                            user.Roles = roles;
-                            return response.Ok(user);
+                            machine.Roles = roles;
+                            return response.Ok(machine);
                         }
                     });
                 }
             });
         });
 
-        this.Post('/users', (request, response, next) => {
-            const userIds = request.body;
+        this.Post('/machines', (request, response, next) => {
+            const machineIds = request.body;
         
-            if (userIds.length === 0) { 
-                return response.BadRequest('Body did not contain any user Ids.');
+            if (machineIds.length === 0) { 
+                return response.BadRequest('Body did not contain any machine Ids.');
             }
 
             Role.FetchAll((roles, err) => {
@@ -72,17 +72,17 @@ module.exports = class UsersController extends Framework.Service.Controller {
                     return next(err); 
                 }
                 else {
-                    User.FetchByIds(userIds, (users, err) => {
+                    Machine.FetchByIds(machineIds, (machines, err) => {
                         if (err !== undefined) { return next(err); }
                 
-                        const unfoundIds = userIds.filter(id => !users.map(p => p.Id).includes(id));
+                        const unfoundIds = machineIds.filter(id => !machines.map(p => p.Id).includes(id));
             
-                        users.forEach(user => {
-                            for (let index in user.Roles) {
-                                const role = roles.find(r => r._id === user.Roles[index].toString());
+                        machines.forEach(machine => {
+                            for (let index in machine.Roles) {
+                                const role = roles.find(r => r._id === machine.Roles[index].toString());
                                 if (role) {
-                                    user.Roles[index] = role ? role : {
-                                        _id: user.Roles[index],
+                                    machine.Roles[index] = role ? role : {
+                                        _id: machine.Roles[index],
                                         _name: 'MISSING_ROLE'
                                     }
                                 }
@@ -90,31 +90,30 @@ module.exports = class UsersController extends Framework.Service.Controller {
                         });
 
                         if (unfoundIds.length > 0) {
-                            response.Partial(users, unfoundIds.map(id => `No user was found for supplied Id '${id}'`));
+                            response.Partial(machines, unfoundIds.map(id => `No machine was found for supplied Id '${id}'`));
                         }
                         else {
-                            response.Ok(users);
+                            response.Ok(machines);
                         }
                     });
                 }
             });
         });
 
-        this.Post('/user', (request, response, next) => {
+        this.Post('/machine', (request, response, next) => {
             return PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
-                const newUser = new User(
-                    request.body.Firstname,
-                    request.body.Lastname,
-                    request.body.Email,
+                const newMachine = new Machine(
+                    request.body.Name,
+                    request.body.Address,
                     encryptedPassword);
             
-                newUser.Save((data, err) => {
+                newMachine.Save((data, err) => {
                     if (err !== undefined) { return next(err); }
             
-                    this.Logger.Info(`Added new user:`);
-                    console.info(newUser);
+                    this.Logger.Info(`Added new machine:`);
+                    console.info(newMachine);
             
-                    return response.Ok(newUser, {
+                    return response.Ok(newMachine, {
                         itemName: data.Name,
                         identifier: data.Id
                     });
@@ -122,23 +121,22 @@ module.exports = class UsersController extends Framework.Service.Controller {
             });
         });
 
-        this.Put('/user/:id', (request, response, next) => {
-            User.FetchById(request.params.id, (user, err) => {
+        this.Put('/machine/:id', (request, response, next) => {
+            Machine.FetchById(request.params.id, (machine, err) => {
                 if (err !== undefined) { return next(err); }
                 
                 PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
-                    user.Firstname = request.body.Firstname;
-                    user.Lastname = request.body.Lastname;
-                    user.Email = request.body.Email;
-                    user.Password = encryptedPassword;
-                    user.Roles = request.body.Roles;
+                    machine.Name = request.body.Name;
+                    machine.Address = request.body.Address;
+                    machine.Password = encryptedPassword;
+                    machine.Roles = request.body.Roles;
             
-                    user.Save((data, err) => {
+                    machine.Save((data, err) => {
                         if (err !== undefined) { 
                             return next(err); 
                         }
                         else {
-                            this.Logger.Info('updated user:');
+                            this.Logger.Info('updated machine:');
                             console.info(data);
             
                             return response.Ok(data);
@@ -148,24 +146,24 @@ module.exports = class UsersController extends Framework.Service.Controller {
             });
         });
 
-        this.Delete('/user/:id', (request, response, next) => {
-            User.FetchById(request.params.id, (user, err) => {
+        this.Delete('/machine/:id', (request, response, next) => {
+            Machine.FetchById(request.params.id, (machine, err) => {
                 if (err !== undefined) { return next(err); }
                 
-                user.Delete((existed, err) => {
+                machine.Delete((existed, err) => {
                     if (err !== undefined && existed) { 
                         return next(err); 
                     }
                     else if (!existed) {
-                        return response.Partial(user, {
+                        return response.Partial(machine, {
                             UnexpectedBehaviour: `Record with Id ${request.params.id} has already been deleted, or never existed.`
                         });
                     }
                     else {
-                        this.Logger.Info(`removed user:`);
-                        console.info(user);
+                        this.Logger.Info(`removed machine:`);
+                        console.info(machine);
         
-                        return response.Ok(user);
+                        return response.Ok(machine);
                     }
                 });
             });

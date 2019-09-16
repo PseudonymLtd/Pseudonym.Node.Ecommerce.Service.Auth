@@ -1,40 +1,39 @@
-const Framework = require('pseudonym.node.ecommerce.library.framework');
-const dataStore = new Framework.Data.FileDataStore('users');
+const Identity = require('./identity');
 
-module.exports = class User extends Framework.Models.DataModel
+module.exports = class User extends Identity
 {
-    constructor(name) {
-        super();
-        this.name = name;
-    }
-    get Name() {
-        return this.name;
-    }
-
-    set Name(value) {
-        return this.name = value;
+    constructor(firstname, lastname, email, password, roles, id) {
+        super(`${firstname} ${lastname}`, 'User', password, roles, id);
+        this._firstname = firstname;
+        this._lastname = lastname;
+        this._email = email;
     }
 
-    Delete(callback) {
-        return dataStore.Delete(this.Id, callback);
+    get Firstname() {
+        return this._firstname;
     }
 
-    Save(callback) {
-        return dataStore.Save(this.Id, this, callback);
+    set Firstname(value) {
+        return this._firstname = value;
     }
 
-    static FetchAll(callback) {
-        return dataStore.FetchAll(User.Mapper, callback);
+    get Lastname() {
+        return this._lastname;
     }
 
-    static Fetch(id, callback) {
-        return dataStore.Fetch(id, User.Mapper, callback);
+    set Lastname(value) {
+        return this._lastname = value;
     }
 
-    static Mapper(rawJson) {
-        const dataObj = JSON.parse(rawJson);
-        const obj = new User(dataObj.name);
-        obj.Id = dataObj.id;
-        return obj;
+    get Email() {
+        return this._email;
+    }
+
+    set Email(value) {
+        return this._email = value;
+    }
+
+    static Map(dataObj) {
+        return new User(dataObj._firstname, dataObj._lastname, dataObj._email, dataObj._password, dataObj._roles, dataObj._id.toString());
     }
 }
