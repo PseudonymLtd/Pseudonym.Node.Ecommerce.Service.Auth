@@ -13,7 +13,7 @@ module.exports = class MachinesController extends Framework.Service.Controller {
                     return next(err); 
                 }
                 else {
-                    Machine.Query({ _type: 'machine' }, (machines, err) => {
+                    Machine.FetchAll((machines, err) => {
                         if (err !== undefined) { 
                             return next(err); 
                         }
@@ -46,7 +46,7 @@ module.exports = class MachinesController extends Framework.Service.Controller {
                         suppliedId: request.params.id
                     });
                 }
-                else {
+                else if (machine.Roles.length > 0) {
                     Role.FetchByIds(machine.Roles, (roles, err) => {
                         if (err !== undefined) { 
                             return next(err); 
@@ -56,6 +56,9 @@ module.exports = class MachinesController extends Framework.Service.Controller {
                             return response.Ok(machine);
                         }
                     });
+                }
+                else {
+                    return response.Ok(machine);
                 }
             });
         });
@@ -101,23 +104,40 @@ module.exports = class MachinesController extends Framework.Service.Controller {
         });
 
         this.Post('/machine', (request, response, next) => {
-            return PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
-                const newMachine = new Machine(
-                    request.body.Name,
-                    request.body.Address,
-                    encryptedPassword);
-            
-                newMachine.Save((data, err) => {
-                    if (err !== undefined) { return next(err); }
-            
-                    this.Logger.Info(`Added new machine:`);
-                    console.info(newMachine);
-            
-                    return response.Ok(newMachine, {
-                        itemName: data.Name,
-                        identifier: data.Id
+            const name = request.body.Name.toString().toLowerCase().trim();
+
+            Machine.QuerySingle({ _name: name }, (machine, err) => {
+                if (err !== undefined) { 
+                    return next(err); 
+                }
+                else if (machine === null) {
+                    return PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
+                        const newMachine = new Machine(
+                            name,
+                            request.body.Address,
+                            encryptedPassword);
+                    
+                            newMachine.Save((data, err) => {
+                            if (err !== undefined) { return next(err); }
+                    
+                            this.Logger.Info(`Added new machine:`);
+                            console.info(newMachine);
+                    
+                            return response.Ok(newMachine, {
+                                itemName: data.Name,
+                                identifier: data.Id,
+                                created: true
+                            });
+                        });
                     });
-                });
+                }
+                else {
+                    return response.Ok(machine, {
+                        itemName: machine.Name,
+                        identifier: machine.Id,
+                        created: false
+                    });
+                }
             });
         });
 
@@ -126,7 +146,7 @@ module.exports = class MachinesController extends Framework.Service.Controller {
                 if (err !== undefined) { return next(err); }
                 
                 PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
-                    machine.Name = request.body.Name;
+                    machine.Name = request.body.Name.toString().toLowerCase().trim();
                     machine.Address = request.body.Address;
                     machine.Password = encryptedPassword;
                     machine.Roles = request.body.Roles;

@@ -13,7 +13,7 @@ module.exports = class UsersController extends Framework.Service.Controller {
                     return next(err); 
                 }
                 else {
-                    User.Query({ _type: 'User' }, (users, err) => {
+                    User.FetchAll((users, err) => {
                         if (err !== undefined) { 
                             return next(err); 
                         }
@@ -46,7 +46,7 @@ module.exports = class UsersController extends Framework.Service.Controller {
                         suppliedId: request.params.id
                     });
                 }
-                else {
+                else if (user.Roles.length > 0) {
                     Role.FetchByIds(user.Roles, (roles, err) => {
                         if (err !== undefined) { 
                             return next(err); 
@@ -56,6 +56,9 @@ module.exports = class UsersController extends Framework.Service.Controller {
                             return response.Ok(user);
                         }
                     });
+                }
+                else {
+                    return response.Ok(user);
                 }
             });
         });
@@ -101,24 +104,41 @@ module.exports = class UsersController extends Framework.Service.Controller {
         });
 
         this.Post('/user', (request, response, next) => {
-            return PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
-                const newUser = new User(
-                    request.body.Firstname,
-                    request.body.Lastname,
-                    request.body.Email,
-                    encryptedPassword);
-            
-                newUser.Save((data, err) => {
-                    if (err !== undefined) { return next(err); }
-            
-                    this.Logger.Info(`Added new user:`);
-                    console.info(newUser);
-            
-                    return response.Ok(newUser, {
-                        itemName: data.Name,
-                        identifier: data.Id
+            const email = request.body.Email.toString().toLowerCase().trim();
+
+            User.QuerySingle({ _email: email }, (user, err) => {
+                if (err !== undefined) { 
+                    return next(err); 
+                }
+                else if (user === null) {
+                    return PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
+                        const newUser = new User(
+                            request.body.Firstname,
+                            request.body.Lastname,
+                            email,
+                            encryptedPassword);
+                    
+                        newUser.Save((data, err) => {
+                            if (err !== undefined) { return next(err); }
+                    
+                            this.Logger.Info(`Added new user:`);
+                            console.info(newUser);
+                    
+                            return response.Ok(newUser, {
+                                itemName: data.Name,
+                                identifier: data.Id,
+                                created: true
+                            });
+                        });
                     });
-                });
+                }
+                else {
+                    return response.Ok(user, {
+                        itemName: user.Name,
+                        identifier: user.Id,
+                        created: false
+                    });
+                }
             });
         });
 
@@ -129,7 +149,7 @@ module.exports = class UsersController extends Framework.Service.Controller {
                 PasswordTools.ExtractPassword(request, next, (encryptedPassword) => {
                     user.Firstname = request.body.Firstname;
                     user.Lastname = request.body.Lastname;
-                    user.Email = request.body.Email;
+                    user.Email = request.body.Email.toString().toLowerCase().trim();
                     user.Password = encryptedPassword;
                     user.Roles = request.body.Roles;
             

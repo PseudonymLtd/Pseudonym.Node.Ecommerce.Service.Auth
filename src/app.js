@@ -24,4 +24,4 @@ serviceRunner.RegisterPostProcessor((request, response, complete) => {
     })
 });
 
-serviceRunner.Start(3100);
+return serviceRunner.Start(3100);

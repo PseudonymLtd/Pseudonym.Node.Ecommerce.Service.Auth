@@ -31,7 +31,7 @@ module.exports = class AuthController extends Framework.Service.Controller {
                             if (err !== undefined) { 
                                 return response.Unauthorized(identity, err);
                             }
-                            else {
+                            else if (identity.Roles.length > 0) {
                                 Role.FetchByIds(identity.Roles, (roles, err) => {
                                     if (err !== undefined) { 
                                         return next(err); 
@@ -42,6 +42,9 @@ module.exports = class AuthController extends Framework.Service.Controller {
                                     }
                                 });
                             }
+                            else {
+                                return response.Ok(identity);
+                            }
                         });
                 }
             }
@@ -50,7 +53,7 @@ module.exports = class AuthController extends Framework.Service.Controller {
                 return User.QuerySingle({ _email: uniqueIndex }, callback);
             }
             else {
-                return Machine.QuerySingle({ _address: uniqueIndex }, callback);
+                return Machine.QuerySingle({ _name: uniqueIndex }, callback);
             }
         });
     }

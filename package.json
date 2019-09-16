@@ -1,6 +1,6 @@
 {
     "name": "pseudonym.node.ecommerce.service.auth",
-    "version": "1.0.0-alpha",
+    "version": "1.0.0",
     "description": "Authentication System",
     "main": "src/app.js",
     "scripts": {
@@ -31,6 +31,6 @@
     "dependencies": {
         "body-parser": "^1.19.0",
         "express": "^4.17.1",
-        "pseudonym.node.ecommerce.library.framework": "^1.2.4-alpha.1"
+        "pseudonym.node.ecommerce.library.framework": "^1.2.5-alpha-1"
     }
 }

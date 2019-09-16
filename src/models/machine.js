@@ -18,4 +18,12 @@ module.exports = class Machine extends Identity
     static Map(dataObj) {
         return new Machine(dataObj._name, dataObj._address, dataObj._password, dataObj._roles, dataObj._id.toString());
     }
+
+    static Query(query, callback) {
+        return super.Query({...query, _type: 'Machine'}, callback);
+    }
+
+    static QuerySingle(query, callback) {
+        return super.QuerySingle({...query, _type: 'Machine'}, callback);
+    }
 }
